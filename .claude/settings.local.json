@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx sv create . --template minimal --types ts --no-add-ons --no-install)",
+      "Bash(npm install)",
+      "Bash(npm run check:*)",
+      "Bash(timeout 15 npm run dev:*)",
+      "Bash(timeout 10 npm run dev)",
+      "Bash(dir:*)",
+      "mcp__playwright__browser_navigate",
+      "Bash(npm run dev:*)",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_press_key",
+      "mcp__playwright__browser_click",
+      "Bash(npm install:*)",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_resize",
+      "Bash(firebase --version:*)",
+      "Bash(firebase projects:list:*)",
+      "Bash(firebase firestore:documents:list:*)",
+      "Bash(firebase database:get:*)",
+      "Bash(firebase firestore:databases:list:*)",
+      "Bash(node scripts/read-feedback.js:*)",
+      "Bash(gcloud auth application-default print-access-token:*)",
+      "Bash(node scripts/read-feedback.cjs:*)",
+      "Bash(node scripts/delete-feedback.cjs:*)",
+      "Bash(curl:*)",
+      "mcp__playwright__browser_close",
+      "Bash(timeout 8 npm run dev:*)",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_snapshot",
+      "Bash(npm run build:*)"
+    ]
+  }
+}
