@@ -46,7 +46,6 @@
 		</div>
 	{/if}
 
-	<div class="nav-spacer"></div>
 
 	<!-- Theme section at bottom -->
 	<div class="nav-section footer">
@@ -111,7 +110,7 @@
 
 	.nav-section h3 {
 		margin: 0 0 8px 4px;
-		font-size: 10px;
+		font-size: 12px;
 		color: var(--text-muted);
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
@@ -148,7 +147,7 @@
 		align-items: center;
 		gap: 8px;
 		margin: 0;
-		font-size: 10px;
+		font-size: 12px;
 		color: var(--text-muted);
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
@@ -159,7 +158,7 @@
 	}
 
 	.toggle-icon {
-		font-size: 10px;
+		font-size: 12px;
 		color: var(--text-muted);
 		transition: transform 0.2s;
 	}

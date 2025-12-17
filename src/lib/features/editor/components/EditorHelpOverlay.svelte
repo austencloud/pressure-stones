@@ -148,12 +148,17 @@
 	}
 
 	.close-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 52px;
+		min-height: 52px;
 		background: transparent;
 		border: none;
 		color: #888;
 		font-size: 1.25rem;
 		cursor: pointer;
-		padding: 0.5rem;
+		margin: -0.5rem -0.5rem -0.5rem 0;
 	}
 
 	.close-btn:hover {
@@ -290,7 +295,8 @@
 	}
 
 	.btn {
-		padding: 0.75rem 1.5rem;
+		min-height: 52px;
+		padding: 0 1.5rem;
 		border: none;
 		border-radius: 6px;
 		cursor: pointer;

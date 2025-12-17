@@ -1,50 +1,20 @@
 /**
- * PUZZLE DESIGN GUIDELINES
- * ========================
+ * PRESSURE STONES - LEVEL DESIGN
  *
- * These rules help ensure puzzles are solvable. Breaking them often creates impossible scenarios.
+ * Design principle: Each level teaches ONE thing.
+ * The next level uses what you learned + adds ONE small twist.
  *
- * ## Core Mechanic
- * - Player pushes stones by walking INTO them (stone moves away from player)
- * - Stones can only be pushed, never pulled
- * - Stones stop when hitting walls, room edges, or other stones
- *
- * ## The Golden Rule: Pushability
- * For EVERY stone that needs to reach a pad:
- * 1. Can the player physically reach the OPPOSITE side of the stone from the pad?
- * 2. Is the path from stone to pad clear?
- * 3. Is there empty space behind the stone for the player to stand?
- *
- * ## Common Mistakes That Create Impossible Puzzles
- *
- * ### 1. Corner Traps
- * BAD: Stone at (1,1) with walls at (0,1) and (1,0)
- *      Player can only approach from right or below, can only push into walls
- *
- * ### 2. Wall-Blocked Pushes
- * BAD: Stone needs to go RIGHT, but wall is directly LEFT of stone
- *      Player cannot get to the left side to push right
- *
- * ### 3. No Approach Path
- * BAD: Stone surrounded by walls on 3 sides with only one exit direction,
- *      but that direction doesn't lead to the target pad
- *
- * ### 4. Stone-Blocked Pushes
- * BAD: Stone A needs to reach pad, but Stone B blocks the only approach path
- *      and Stone B cannot be moved out of the way first
- *
- * ## Validation Checklist (do this for EACH stone)
- * □ Identify which pad this stone needs to reach
- * □ Determine which direction the stone must be pushed (toward pad)
- * □ Verify player can reach the opposite side of stone
- * □ Verify nothing blocks the path from stone to pad
- * □ If multiple stones, verify the ORDER is achievable
- *
- * ## Safe Patterns
- * - Stones in open center areas with pads nearby
- * - Stones that only need to move 1-2 tiles
- * - Clear corridors between stones and pads
- * - Player spawn with easy access to all stone approach positions
+ * Progression:
+ * 1. Push stone one tile
+ * 2. Push stone multiple tiles
+ * 3. Push stone in two directions (L-shape)
+ * 4. Two stones, no conflict (parallel goals)
+ * 5. Two stones, ORDER matters (read the key!)
+ * 6. One stone BLOCKS another (spatial planning)
+ * 7. Decoy pad introduced (not everything matters)
+ * 8. Simple wall to navigate around
+ * 9. Combine: walls + two stones + ordering
+ * 10. Final: three stones, real challenge
  */
 
 import {
@@ -58,361 +28,466 @@ import {
 	type IPuzzle
 } from '$lib/shared/domain';
 
-// Shared colors
 const red = createColor('red', 'Red', '#e74c3c');
-const yellow = createColor('yellow', 'Yellow', '#f1c40f');
 const blue = createColor('blue', 'Blue', '#3498db');
 const green = createColor('green', 'Green', '#2ecc71');
-const purple = createColor('purple', 'Purple', '#9b59b6');
+const yellow = createColor('yellow', 'Yellow', '#f1c40f');
 
-// Shared symbols
-const plus = createSymbol('plus', 'Plus', 'fa-solid fa-plus');
 const heart = createSymbol('heart', 'Heart', 'fa-solid fa-heart');
-const starSymbol = createSymbol('star', 'Star', 'fa-solid fa-star');
-const xmark = createSymbol('xmark', 'X', 'fa-solid fa-xmark');
+const star = createSymbol('star', 'Star', 'fa-solid fa-star');
 const diamond = createSymbol('diamond', 'Diamond', 'fa-solid fa-diamond');
 const moon = createSymbol('moon', 'Moon', 'fa-solid fa-moon');
+const xmark = createSymbol('xmark', 'X', 'fa-solid fa-xmark');
 
 export function createSamplePuzzle(): IPuzzle {
-	return createTutorialPuzzle();
+	return level01();
 }
 
 export function createSamplePuzzleSequence(): IPuzzle[] {
 	return [
-		createTutorialPuzzle(),
-		createPuzzleTwo(),
-		createPuzzleThree(),
-		createPuzzleFour(),
-		createPuzzleFive()
+		level01(),
+		level02(),
+		level03(),
+		level04(),
+		level05(),
+		level06(),
+		level07(),
+		level08(),
+		level09(),
+		level10()
 	];
 }
 
 /**
- * Level 1: Tutorial
- * Teaches: Basic movement, pushing ONE stone onto ONE pad, collecting star, exiting
- * Layout: 5x6 room - player pushes stone RIGHT onto pad
+ * LEVEL 1: One Push
  *
- * PUZZLE DESIGN RULES (to avoid impossible puzzles):
- * 1. Player must be able to reach a position OPPOSITE the target pad from the stone
- * 2. The path from stone to pad must be clear (no walls/stones blocking)
- * 3. There must be space behind the stone for the player to push from
- * 4. Corners are dangerous - stones in corners with adjacent walls are often unpushable
- * 5. Always mentally trace: Can player get behind stone? Can stone reach pad?
+ * Teaches: The core mechanic. Walk into stone, it moves.
+ *
+ *   0 1 2 3 4
+ * 0 W W W W W
+ * 1 W P S H W    P = player, S = stone, H = heart pad (all in a row)
+ * 2 W . . . W
+ * 3 W . * . W    * = star
+ * 4 W W E W W    E = exit
+ *
+ * Solution: Right (pushes stone onto pad), Down, Down, Down
  */
-function createTutorialPuzzle(): IPuzzle {
-	const walls = [
-		// Top border (except entrance)
-		createPosition(0, 0),
-		createPosition(1, 0),
-		createPosition(3, 0),
-		createPosition(4, 0),
-		// Bottom border (except exit)
-		createPosition(0, 5),
-		createPosition(1, 5),
-		createPosition(3, 5),
-		createPosition(4, 5),
-		// Left border
-		createPosition(0, 1),
-		createPosition(0, 2),
-		createPosition(0, 3),
-		createPosition(0, 4),
-		// Right border
-		createPosition(4, 1),
-		createPosition(4, 2),
-		createPosition(4, 3),
-		createPosition(4, 4)
-	];
-
-	// Stone in center, pad to its right - player can walk around and push right
-	const pads = [createPressurePad('pad-1', heart, createPosition(3, 2))];
-
-	// Stone is left of the pad, player can get behind it
-	const stones = [createStone('stone-1', red, createPosition(2, 2))];
-
-	const key = [createKeyEntry(red, heart)];
+function level01(): IPuzzle {
+	const walls = makeBox(5, 5, [[2, 0]], [[2, 4]]);
 
 	return createPuzzle({
-		id: 'tutorial',
-		name: 'The First Step',
+		id: 'level-01',
+		name: 'One Push',
 		createdBy: 'system',
-		grid: { width: 5, height: 6, walls },
-		pads,
-		stones,
-		playerSpawn: createPosition(2, 0),
-		star: createPosition(2, 4),
-		exit: createPosition(2, 5),
-		key
+		grid: { width: 5, height: 5, walls },
+		pads: [createPressurePad('p1', heart, createPosition(3, 1))],
+		stones: [createStone('s1', red, createPosition(2, 1))],
+		playerSpawn: createPosition(1, 1),
+		star: createPosition(2, 3),
+		exit: createPosition(2, 4),
+		key: [createKeyEntry(red, heart)]
 	});
 }
 
 /**
- * Level 2: Order Matters
- * Teaches: Sequence matters - must place stones in correct order
- * Layout: 6x6 room, two stones, two pads - pads at top, stones below
+ * LEVEL 2: Long Push
+ *
+ * Teaches: Stones slide until they hit something.
+ *
+ *   0 1 2 3 4 5
+ * 0 W W W W W W
+ * 1 W P S . H W    Push stone all the way right to heart
+ * 2 W . . . . W
+ * 3 W . . * . W
+ * 4 W W W E W W
+ *
+ * Solution: Right (push stone slides to heart), Down, Down, Down
  */
-function createPuzzleTwo(): IPuzzle {
-	const walls = [
-		// Top border (except entrance)
-		createPosition(0, 0),
-		createPosition(1, 0),
-		createPosition(3, 0),
-		createPosition(4, 0),
-		createPosition(5, 0),
-		// Bottom border (except exit)
-		createPosition(0, 5),
-		createPosition(1, 5),
-		createPosition(3, 5),
-		createPosition(4, 5),
-		createPosition(5, 5),
-		// Left border
-		createPosition(0, 1),
-		createPosition(0, 2),
-		createPosition(0, 3),
-		createPosition(0, 4),
-		// Right border
-		createPosition(5, 1),
-		createPosition(5, 2),
-		createPosition(5, 3),
-		createPosition(5, 4)
-	];
-
-	// Pads are on left and right sides
-	const pads = [
-		createPressurePad('pad-1', plus, createPosition(1, 2)),
-		createPressurePad('pad-2', heart, createPosition(4, 2))
-	];
-
-	// Stones are positioned so player must think about order
-	// Red stone is closer to heart pad, blue is closer to plus
-	// But key requires: red→plus FIRST, then blue→heart
-	// Player must push red around blue to get it to plus first
-	const stones = [
-		createStone('stone-1', red, createPosition(3, 2)), // Red near heart
-		createStone('stone-2', blue, createPosition(2, 2)) // Blue near plus
-	];
-
-	// Red on plus FIRST, then blue on heart
-	const key = [createKeyEntry(red, plus), createKeyEntry(blue, heart)];
+function level02(): IPuzzle {
+	const walls = makeBox(6, 5, [[3, 0]], [[3, 4]]);
 
 	return createPuzzle({
-		id: 'puzzle-2',
-		name: 'Order Matters',
+		id: 'level-02',
+		name: 'Long Push',
+		createdBy: 'system',
+		grid: { width: 6, height: 5, walls },
+		pads: [createPressurePad('p1', heart, createPosition(4, 1))],
+		stones: [createStone('s1', red, createPosition(2, 1))],
+		playerSpawn: createPosition(1, 1),
+		star: createPosition(3, 3),
+		exit: createPosition(3, 4),
+		key: [createKeyEntry(red, heart)]
+	});
+}
+
+/**
+ * LEVEL 3: The Corner
+ *
+ * Teaches: Push stone in two directions (L-shaped path).
+ *
+ *   0 1 2 3 4 5
+ * 0 W W W W W W
+ * 1 W H . . . W    H = pad in top-left corner
+ * 2 W . . . . W
+ * 3 W . . S P W    S = stone, P = player to its right
+ * 4 W . . * . W    * = star
+ * 5 W W W E W W    E = exit
+ *
+ * Solution:
+ * 1. Left (push stone, slides to wall at x=1)
+ * 2. Go down and left to get below stone
+ * 3. Up (push stone up to pad at 1,1)
+ */
+function level03(): IPuzzle {
+	const walls = makeBox(6, 6, [[3, 0]], [[3, 5]]);
+
+	return createPuzzle({
+		id: 'level-03',
+		name: 'The Corner',
 		createdBy: 'system',
 		grid: { width: 6, height: 6, walls },
-		pads,
-		stones,
-		playerSpawn: createPosition(2, 0),
-		star: createPosition(2, 4),
-		exit: createPosition(2, 5),
-		key
+		pads: [createPressurePad('p1', heart, createPosition(1, 1))],
+		stones: [createStone('s1', red, createPosition(3, 3))],
+		playerSpawn: createPosition(4, 3),
+		star: createPosition(3, 4),
+		exit: createPosition(3, 5),
+		key: [createKeyEntry(red, heart)]
 	});
 }
 
 /**
- * Level 3: The Decoy
- * Teaches: Not all pads are in the key - some are traps/decoys
- * Layout: 6x6 room, two stones, THREE pads (one decoy)
+ * LEVEL 4: Two Stones (Easy)
+ *
+ * Teaches: Multiple objectives. They don't interfere - do either first.
+ *
+ *   0 1 2 3 4 5
+ * 0 W W W W W W
+ * 1 W H . . D W    H = heart, D = diamond (pads at top)
+ * 2 W R . . B W    R = red, B = blue (stones below pads)
+ * 3 W . . . . W
+ * 4 W . P * . W    P = player, * = star
+ * 5 W W W E W W
+ *
+ * Key: Red -> Heart, Blue -> Diamond
+ *
+ * Solution: Go under red, push up. Go under blue, push up.
  */
-function createPuzzleThree(): IPuzzle {
-	const walls = [
-		// Top border (except entrance)
-		createPosition(0, 0),
-		createPosition(1, 0),
-		createPosition(3, 0),
-		createPosition(4, 0),
-		createPosition(5, 0),
-		// Bottom border (except exit)
-		createPosition(0, 5),
-		createPosition(1, 5),
-		createPosition(3, 5),
-		createPosition(4, 5),
-		createPosition(5, 5),
-		// Left border
-		createPosition(0, 1),
-		createPosition(0, 2),
-		createPosition(0, 3),
-		createPosition(0, 4),
-		// Right border
-		createPosition(5, 1),
-		createPosition(5, 2),
-		createPosition(5, 3),
-		createPosition(5, 4)
-	];
-
-	const pads = [
-		createPressurePad('pad-1', heart, createPosition(1, 2)),
-		createPressurePad('pad-2', xmark, createPosition(2, 3)), // DECOY - not in key!
-		createPressurePad('pad-3', diamond, createPosition(4, 2))
-	];
-
-	const stones = [
-		createStone('stone-1', yellow, createPosition(2, 2)),
-		createStone('stone-2', green, createPosition(3, 2))
-	];
-
-	// Yellow on heart, green on diamond - X pad is a trap!
-	const key = [createKeyEntry(yellow, heart), createKeyEntry(green, diamond)];
+function level04(): IPuzzle {
+	const walls = makeBox(6, 6, [[3, 0]], [[3, 5]]);
 
 	return createPuzzle({
-		id: 'puzzle-3',
+		id: 'level-04',
+		name: 'Two Stones',
+		createdBy: 'system',
+		grid: { width: 6, height: 6, walls },
+		pads: [
+			createPressurePad('p1', heart, createPosition(1, 1)),
+			createPressurePad('p2', diamond, createPosition(4, 1))
+		],
+		stones: [
+			createStone('s1', red, createPosition(1, 2)),
+			createStone('s2', blue, createPosition(4, 2))
+		],
+		playerSpawn: createPosition(2, 4),
+		star: createPosition(3, 4),
+		exit: createPosition(3, 5),
+		key: [createKeyEntry(red, heart), createKeyEntry(blue, diamond)]
+	});
+}
+
+/**
+ * LEVEL 5: Read the Key
+ *
+ * Teaches: The KEY SEQUENCE matters! Don't assume proximity.
+ *
+ *   0 1 2 3 4 5 6
+ * 0 W W W W W W W
+ * 1 W H . . . D W    H = heart at (1,1), D = diamond at (5,1)
+ * 2 W . B . R . W    B = blue at (2,2), R = red at (4,2)
+ * 3 W . . P . . W    P = player
+ * 4 W . . * . . W
+ * 5 W W W E W W W
+ *
+ * Key: Blue -> Diamond (RIGHT pad), Red -> Heart (LEFT pad)
+ *
+ * Blue is CLOSER to Heart but must go to Diamond (far right).
+ * Red is CLOSER to Diamond but must go to Heart (far left).
+ *
+ * Solution:
+ * 1. Push Blue RIGHT (slides to wall), then UP to Diamond
+ * 2. Push Red LEFT (slides to wall), then UP to Heart
+ */
+function level05(): IPuzzle {
+	const walls = makeBox(7, 6, [[3, 0]], [[3, 5]]);
+
+	return createPuzzle({
+		id: 'level-05',
+		name: 'Read the Key',
+		createdBy: 'system',
+		grid: { width: 7, height: 6, walls },
+		pads: [
+			createPressurePad('p1', heart, createPosition(1, 1)),
+			createPressurePad('p2', diamond, createPosition(5, 1))
+		],
+		stones: [
+			createStone('s1', blue, createPosition(2, 2)),
+			createStone('s2', red, createPosition(4, 2))
+		],
+		playerSpawn: createPosition(3, 3),
+		star: createPosition(3, 4),
+		exit: createPosition(3, 5),
+		// Blue to Diamond (far), Red to Heart (far) - counterintuitive!
+		key: [createKeyEntry(blue, diamond), createKeyEntry(red, heart)]
+	});
+}
+
+/**
+ * LEVEL 6: The Blocker
+ *
+ * Teaches: One stone blocks the push position for another.
+ *
+ *   0 1 2 3 4 5 6
+ * 0 W W W W W W W
+ * 1 W . H . . . W    H = heart at (2,1)
+ * 2 W . R . . . W    R = red at (2,2) - directly below heart
+ * 3 W . B . P . W    B = blue at (2,3) - BLOCKS the push position!
+ * 4 W . . * . . W
+ * 5 W W W E W W W
+ *
+ * Key: Red -> Heart (only red matters, blue is obstacle)
+ *
+ * Problem: To push Red UP, player needs to stand at (2,3).
+ *          But Blue is at (2,3)! Must move Blue first.
+ *
+ * Solution:
+ * 1. Push Blue LEFT (out of the way)
+ * 2. Stand at (2,3), push Red UP to heart
+ */
+function level06(): IPuzzle {
+	const walls = makeBox(7, 6, [[3, 0]], [[3, 5]]);
+
+	return createPuzzle({
+		id: 'level-06',
+		name: 'The Blocker',
+		createdBy: 'system',
+		grid: { width: 7, height: 6, walls },
+		pads: [createPressurePad('p1', heart, createPosition(2, 1))],
+		stones: [
+			createStone('s1', red, createPosition(2, 2)),
+			createStone('s2', blue, createPosition(2, 3))
+		],
+		playerSpawn: createPosition(4, 3),
+		star: createPosition(3, 4),
+		exit: createPosition(3, 5),
+		key: [createKeyEntry(red, heart)]
+	});
+}
+
+/**
+ * LEVEL 7: The Decoy
+ *
+ * Teaches: Not every pad is in the key. Some are traps/distractions.
+ *
+ *   0 1 2 3 4 5
+ * 0 W W W W W W
+ * 1 W X . . H W    X = decoy pad, H = heart (real target)
+ * 2 W . R . . W    R = red stone
+ * 3 W . . . P W
+ * 4 W . . * . W
+ * 5 W W W E W W
+ *
+ * Key: Red -> Heart (NOT the X!)
+ *
+ * The X pad is closer/easier, but it's not in the key.
+ * Player must push red all the way right to heart.
+ */
+function level07(): IPuzzle {
+	const walls = makeBox(6, 6, [[3, 0]], [[3, 5]]);
+
+	return createPuzzle({
+		id: 'level-07',
 		name: 'The Decoy',
 		createdBy: 'system',
 		grid: { width: 6, height: 6, walls },
-		pads,
-		stones,
-		playerSpawn: createPosition(2, 0),
-		star: createPosition(2, 4),
-		exit: createPosition(2, 5),
-		key
-	});
-}
-
-/**
- * Level 4: The Maze
- * Teaches: Navigation around obstacles, planning your path
- * Layout: 7x6 room with internal walls creating a maze
- */
-function createPuzzleFour(): IPuzzle {
-	const walls = [
-		// Top border (except entrance)
-		createPosition(0, 0),
-		createPosition(1, 0),
-		createPosition(2, 0),
-		createPosition(4, 0),
-		createPosition(5, 0),
-		createPosition(6, 0),
-		// Bottom border (except exit)
-		createPosition(0, 5),
-		createPosition(1, 5),
-		createPosition(2, 5),
-		createPosition(4, 5),
-		createPosition(5, 5),
-		createPosition(6, 5),
-		// Left border
-		createPosition(0, 1),
-		createPosition(0, 2),
-		createPosition(0, 3),
-		createPosition(0, 4),
-		// Right border
-		createPosition(6, 1),
-		createPosition(6, 2),
-		createPosition(6, 3),
-		createPosition(6, 4),
-		// Internal maze walls - creates winding path
-		createPosition(2, 1),
-		createPosition(2, 2),
-		createPosition(4, 2),
-		createPosition(4, 3),
-		createPosition(4, 4),
-		createPosition(2, 4)
-	];
-
-	const pads = [
-		createPressurePad('pad-1', starSymbol, createPosition(1, 1)),
-		createPressurePad('pad-2', moon, createPosition(5, 3)),
-		createPressurePad('pad-3', plus, createPosition(1, 3))
-	];
-
-	const stones = [
-		createStone('stone-1', purple, createPosition(3, 1)),
-		createStone('stone-2', blue, createPosition(5, 1)),
-		createStone('stone-3', red, createPosition(3, 3))
-	];
-
-	// Must navigate maze to place stones correctly
-	const key = [
-		createKeyEntry(purple, starSymbol),
-		createKeyEntry(red, plus),
-		createKeyEntry(blue, moon)
-	];
-
-	return createPuzzle({
-		id: 'puzzle-4',
-		name: 'The Maze',
-		createdBy: 'system',
-		grid: { width: 7, height: 6, walls },
-		pads,
-		stones,
-		playerSpawn: createPosition(3, 0),
+		pads: [
+			createPressurePad('decoy', xmark, createPosition(1, 1)), // DECOY
+			createPressurePad('p1', heart, createPosition(4, 1))     // Real target
+		],
+		stones: [createStone('s1', red, createPosition(2, 2))],
+		playerSpawn: createPosition(4, 3),
 		star: createPosition(3, 4),
 		exit: createPosition(3, 5),
-		key
+		key: [createKeyEntry(red, heart)] // Only heart is in key!
 	});
 }
 
 /**
- * Level 5: Crossroads
- * Teaches: More complex planning, 4 stones, careful ordering
- * Layout: 7x7 room with central cross obstacle
+ * LEVEL 8: The Wall
+ *
+ * Teaches: Working around obstacles. Plan your approach.
+ *
+ *   0 1 2 3 4 5 6
+ * 0 W W W W W W W
+ * 1 W H . . . . W    H = heart pad at (1,1)
+ * 2 W . W W . . W    Internal walls at (2,2) and (3,2)
+ * 3 W . . . R . W    R = red at (4,3)
+ * 4 W P . * . . W    P = player at (1,4)
+ * 5 W W W E W W W
+ *
+ * Key: Red -> Heart
+ *
+ * The wall blocks direct path. Must push UP first, then LEFT.
+ *
+ * Solution:
+ * 1. Go to (4,4), push Red UP to (4,1)
+ * 2. Go to (5,1), push Red LEFT to (1,1) heart
  */
-function createPuzzleFive(): IPuzzle {
+function level08(): IPuzzle {
 	const walls = [
-		// Top border (except entrance)
-		createPosition(0, 0),
-		createPosition(1, 0),
-		createPosition(2, 0),
-		createPosition(4, 0),
-		createPosition(5, 0),
-		createPosition(6, 0),
-		// Bottom border (except exit)
-		createPosition(0, 6),
-		createPosition(1, 6),
-		createPosition(2, 6),
-		createPosition(4, 6),
-		createPosition(5, 6),
-		createPosition(6, 6),
-		// Left border
-		createPosition(0, 1),
-		createPosition(0, 2),
-		createPosition(0, 3),
-		createPosition(0, 4),
-		createPosition(0, 5),
-		// Right border
-		createPosition(6, 1),
-		createPosition(6, 2),
-		createPosition(6, 3),
-		createPosition(6, 4),
-		createPosition(6, 5),
-		// Central cross - creates 4 quadrants
-		createPosition(3, 2),
-		createPosition(3, 4),
-		createPosition(2, 3),
-		createPosition(4, 3)
-	];
-
-	const pads = [
-		createPressurePad('pad-1', heart, createPosition(1, 1)), // Top-left
-		createPressurePad('pad-2', diamond, createPosition(5, 1)), // Top-right
-		createPressurePad('pad-3', plus, createPosition(1, 5)), // Bottom-left
-		createPressurePad('pad-4', moon, createPosition(5, 5)), // Bottom-right
-		createPressurePad('pad-5', xmark, createPosition(3, 3)) // Center - DECOY
-	];
-
-	const stones = [
-		createStone('stone-1', red, createPosition(2, 1)),
-		createStone('stone-2', yellow, createPosition(4, 1)),
-		createStone('stone-3', blue, createPosition(2, 5)),
-		createStone('stone-4', green, createPosition(4, 5))
-	];
-
-	// Diagonal pattern: red→heart, yellow→diamond, blue→plus, green→moon
-	const key = [
-		createKeyEntry(red, heart),
-		createKeyEntry(yellow, diamond),
-		createKeyEntry(blue, plus),
-		createKeyEntry(green, moon)
+		...makeBox(7, 6, [[3, 0]], [[3, 5]]),
+		createPosition(2, 2),
+		createPosition(3, 2)
 	];
 
 	return createPuzzle({
-		id: 'puzzle-5',
-		name: 'Crossroads',
+		id: 'level-08',
+		name: 'The Wall',
+		createdBy: 'system',
+		grid: { width: 7, height: 6, walls },
+		pads: [createPressurePad('p1', heart, createPosition(1, 1))],
+		stones: [createStone('s1', red, createPosition(4, 3))],
+		playerSpawn: createPosition(1, 4),
+		star: createPosition(3, 4),
+		exit: createPosition(3, 5),
+		key: [createKeyEntry(red, heart)]
+	});
+}
+
+/**
+ * LEVEL 9: Putting It Together
+ *
+ * Combines: Two stones + ordering + one obstacle
+ *
+ *   0 1 2 3 4 5 6
+ * 0 W W W W W W W
+ * 1 W H . . . D W    H = heart, D = diamond
+ * 2 W . . W . . W    Small wall in middle
+ * 3 W R . W . B W    R = red, B = blue
+ * 4 W . . . P . W
+ * 5 W . . * . . W
+ * 6 W W W E W W W
+ *
+ * Key: Red -> Heart, Blue -> Diamond
+ *
+ * The wall separates them so they don't interfere.
+ * But you still need to navigate around it.
+ */
+function level09(): IPuzzle {
+	const walls = [
+		...makeBox(7, 7, [[3, 0]], [[3, 6]]),
+		createPosition(3, 2),
+		createPosition(3, 3)
+	];
+
+	return createPuzzle({
+		id: 'level-09',
+		name: 'Two Paths',
 		createdBy: 'system',
 		grid: { width: 7, height: 7, walls },
-		pads,
-		stones,
-		playerSpawn: createPosition(3, 0),
+		pads: [
+			createPressurePad('p1', heart, createPosition(1, 1)),
+			createPressurePad('p2', diamond, createPosition(5, 1))
+		],
+		stones: [
+			createStone('s1', red, createPosition(1, 3)),
+			createStone('s2', blue, createPosition(5, 3))
+		],
+		playerSpawn: createPosition(4, 4),
 		star: createPosition(3, 5),
 		exit: createPosition(3, 6),
-		key
+		key: [createKeyEntry(red, heart), createKeyEntry(blue, diamond)]
 	});
+}
+
+/**
+ * LEVEL 10: The Gauntlet
+ *
+ * Final challenge: Three stones, must follow key order precisely.
+ *
+ *   0 1 2 3 4 5 6
+ * 0 W W W W W W W
+ * 1 W H S D . . W    Pads: H(1,1), S(2,1), D(3,1)
+ * 2 W R G B . . W    Stones directly below pads, in a row
+ * 3 W . . . . . W
+ * 4 W . . . P . W
+ * 5 W . . * . . W
+ * 6 W W W E W W W
+ *
+ * Key: Green -> Star FIRST, then Red -> Heart, then Blue -> Diamond
+ *
+ * All stones can easily reach their pads (push UP).
+ * But you MUST do Green first! The key enforces the order.
+ *
+ * This level tests: Did you learn to READ THE KEY?
+ */
+function level10(): IPuzzle {
+	const walls = makeBox(7, 7, [[3, 0]], [[3, 6]]);
+
+	return createPuzzle({
+		id: 'level-10',
+		name: 'The Gauntlet',
+		createdBy: 'system',
+		grid: { width: 7, height: 7, walls },
+		pads: [
+			createPressurePad('p1', heart, createPosition(1, 1)),
+			createPressurePad('p2', star, createPosition(2, 1)),
+			createPressurePad('p3', diamond, createPosition(3, 1))
+		],
+		stones: [
+			createStone('s1', red, createPosition(1, 2)),
+			createStone('s2', green, createPosition(2, 2)),
+			createStone('s3', blue, createPosition(3, 2))
+		],
+		playerSpawn: createPosition(4, 4),
+		star: createPosition(3, 5),
+		exit: createPosition(3, 6),
+		// Green must be FIRST! Easy to mess up if you just push left-to-right.
+		key: [
+			createKeyEntry(green, star),
+			createKeyEntry(red, heart),
+			createKeyEntry(blue, diamond)
+		]
+	});
+}
+
+/**
+ * Helper: Creates a rectangular box of walls with entrance/exit gaps
+ */
+function makeBox(
+	width: number,
+	height: number,
+	entranceGaps: [number, number][],
+	exitGaps: [number, number][]
+): ReturnType<typeof createPosition>[] {
+	const walls: ReturnType<typeof createPosition>[] = [];
+	const gaps = new Set([
+		...entranceGaps.map(([x, y]) => `${x},${y}`),
+		...exitGaps.map(([x, y]) => `${x},${y}`)
+	]);
+
+	for (let x = 0; x < width; x++) {
+		// Top row
+		if (!gaps.has(`${x},0`)) walls.push(createPosition(x, 0));
+		// Bottom row
+		if (!gaps.has(`${x},${height - 1}`)) walls.push(createPosition(x, height - 1));
+	}
+
+	for (let y = 1; y < height - 1; y++) {
+		// Left column
+		if (!gaps.has(`0,${y}`)) walls.push(createPosition(0, y));
+		// Right column
+		if (!gaps.has(`${width - 1},${y}`)) walls.push(createPosition(width - 1, y));
+	}
+
+	return walls;
 }

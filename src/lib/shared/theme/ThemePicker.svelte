@@ -118,7 +118,7 @@
 	}
 
 	.theme-desc {
-		font-size: 11px;
+		font-size: 12px;
 		color: var(--card-text-dim);
 	}
 
@@ -179,7 +179,7 @@
 		flex-direction: row;
 		padding: 6px 10px;
 		gap: 10px;
-		min-height: 44px;
+		min-height: 52px;
 	}
 
 	.theme-picker.compact .theme-icon {

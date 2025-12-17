@@ -168,7 +168,7 @@
 
 	h3 {
 		margin: 0 0 8px;
-		font-size: 10px;
+		font-size: 12px;
 		color: var(--text-muted);
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
@@ -238,7 +238,7 @@
 	.validation-status i {
 		width: 14px;
 		text-align: center;
-		font-size: 10px;
+		font-size: 12px;
 	}
 
 	.action-grid {
@@ -258,7 +258,7 @@
 		border: 1px solid var(--border);
 		border-radius: 8px;
 		color: var(--text-secondary);
-		font-size: 11px;
+		font-size: 12px;
 		cursor: pointer;
 		transition: all 0.15s;
 	}

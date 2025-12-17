@@ -95,15 +95,15 @@
 		position: absolute;
 		top: 4px;
 		right: 4px;
-		width: 24px;
-		height: 24px;
+		width: 52px;
+		height: 52px;
 		padding: 0;
 		background: rgba(0, 0, 0, 0.6);
 		border: none;
-		border-radius: 4px;
+		border-radius: 8px;
 		color: #888;
 		cursor: pointer;
-		font-size: 0.7rem;
+		font-size: 12px;
 		opacity: 0;
 		transition: opacity 0.15s, color 0.15s, background 0.15s;
 	}
@@ -151,7 +151,7 @@
 	}
 
 	.description {
-		font-size: 0.75rem;
+		font-size: 12px;
 		color: #888;
 	}
 </style>

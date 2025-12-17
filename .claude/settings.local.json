@@ -30,7 +30,8 @@
       "Bash(timeout 8 npm run dev:*)",
       "mcp__playwright__browser_console_messages",
       "mcp__playwright__browser_snapshot",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "WebSearch"
     ]
   }
 }

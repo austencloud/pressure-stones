@@ -10,22 +10,22 @@
 	import SaveTemplateModal from './SaveTemplateModal.svelte';
 	import EditorHelpOverlay from './EditorHelpOverlay.svelte';
 	import MobileToolbar from './MobileToolbar.svelte';
-	import BottomSheet from '$lib/shared/components/BottomSheet.svelte';
 	import ShapeDrawModeToggle from './ShapeDrawModeToggle.svelte';
 	import type { IRoomTemplate } from '$lib/shared/domain';
+	import type { AppMode } from '$lib/shared/state/app-mode.svelte';
 
 	interface Props {
 		onOpenSettings: () => void;
+		onModeChange?: (mode: AppMode) => void;
 	}
 
-	let { onOpenSettings }: Props = $props();
+	let { onOpenSettings, onModeChange }: Props = $props();
 
 	let editorState = getEditorState();
 	let showTemplatePicker = $state(false);
 	let showSaveTemplateModal = $state(false);
 	let showHelp = $state(false);
 	let showMobileMenu = $state(false);
-	let showSettingsSheet = $state(false);
 
 	let isMobile = $state(false);
 
@@ -95,6 +95,13 @@
 
 <div class="editor-view" class:mobile={isMobile}>
 	<div class="editor-header">
+		{#if onModeChange}
+			<button class="btn btn-back desktop-only" onclick={() => onModeChange('play')} title="Back to Play">
+				<i class="fa-solid fa-arrow-left"></i>
+				<span>Play</span>
+			</button>
+		{/if}
+
 		<input
 			type="text"
 			class="puzzle-name-input"
@@ -102,6 +109,12 @@
 			onchange={handleNameChange}
 			placeholder="Puzzle Name"
 		/>
+
+		<div class="header-actions desktop-only">
+			<button class="btn btn-icon" onclick={onOpenSettings} title="Settings">
+				<i class="fa-solid fa-gear"></i>
+			</button>
+		</div>
 
 		<div class="header-actions mobile-only">
 			<button class="btn btn-icon" onclick={() => (showHelp = true)} title="Help">
@@ -184,50 +197,16 @@
 		<EditorCanvas {editorState} />
 	</main>
 
-	{#if isMobile}
-		<MobileToolbar
-			{editorState}
-			onNewTemplate={() => showTemplatePicker = true}
-			onSaveTemplate={() => showSaveTemplateModal = true}
-			onImport={handleImport}
-			onExport={handleExport}
-			onClear={handleClear}
-			onHelp={() => showHelp = true}
-		/>
-	{/if}
-</div>
-
-<!-- Desktop-only bottom sheet - mobile has sheets in MobileToolbar -->
-<BottomSheet open={showSettingsSheet && !isMobile} title="Settings" onClose={() => (showSettingsSheet = false)}>
-	<div class="sheet-sections">
-		<section class="sheet-section">
-			<h4>Key Sequence</h4>
+	<!-- Desktop: Right panel with settings -->
+	<aside class="settings-panel desktop-only">
+		<section>
+			<h3>Key Sequence</h3>
 			<KeySequenceEditor {editorState} />
 		</section>
 
-		{#if editorState.selectedTool === 'stone'}
-			<section class="sheet-section">
-				<h4>Stone Color</h4>
-				<ColorPicker
-					selected={editorState.selectedColor}
-					onSelect={(color) => editorState.setSelectedColor(color)}
-				/>
-			</section>
-		{/if}
-
-		{#if editorState.selectedTool === 'pad'}
-			<section class="sheet-section">
-				<h4>Pad Symbol</h4>
-				<SymbolPicker
-					selected={editorState.selectedSymbol}
-					onSelect={(symbol) => editorState.setSelectedSymbol(symbol)}
-				/>
-			</section>
-		{/if}
-
-		<section class="sheet-section">
-			<h4>Puzzle Settings</h4>
-			<div class="settings">
+		<section>
+			<h3>Puzzle Settings</h3>
+			<div class="settings-grid">
 				<label class="setting-row">
 					<input
 						type="number"
@@ -241,7 +220,6 @@
 					/>
 					<span class="setting-label">Starting Health</span>
 				</label>
-
 				<label class="setting-row">
 					<input
 						type="number"
@@ -255,20 +233,89 @@
 					/>
 					<span class="setting-label">Damage on Fail</span>
 				</label>
-
-				<div class="chip-row">
-					<ChipToggle
-						checked={editorState.config.lockStonesOnCorrectPlacement}
-						label="Lock on Correct"
-						description="Stones lock after correct placement."
-						onchange={(checked) =>
-							editorState.updateConfig({ lockStonesOnCorrectPlacement: checked })}
-					/>
-				</div>
+			</div>
+			<div class="chip-row">
+				<ChipToggle
+					checked={editorState.config.lockStonesOnCorrectPlacement}
+					label="Lock on Correct"
+					description="Stones lock after correct placement."
+					onchange={(checked) =>
+						editorState.updateConfig({ lockStonesOnCorrectPlacement: checked })}
+				/>
 			</div>
 		</section>
-	</div>
-</BottomSheet>
+
+		<section>
+			<h3>Validation</h3>
+			<div class="validation-status">
+				{#if !editorState.playerSpawn}
+					<p class="validation-error"><i class="fa-solid fa-xmark"></i> Player spawn not set</p>
+				{:else}
+					<p class="validation-ok"><i class="fa-solid fa-check"></i> Player spawn set</p>
+				{/if}
+				{#if !editorState.exit}
+					<p class="validation-error"><i class="fa-solid fa-xmark"></i> Exit not set</p>
+				{:else}
+					<p class="validation-ok"><i class="fa-solid fa-check"></i> Exit set</p>
+				{/if}
+				{#if editorState.stones.length === 0}
+					<p class="validation-warn"><i class="fa-solid fa-exclamation"></i> No stones placed</p>
+				{:else}
+					<p class="validation-ok"><i class="fa-solid fa-check"></i> {editorState.stones.length} stone(s)</p>
+				{/if}
+				{#if editorState.key.length === 0}
+					<p class="validation-warn"><i class="fa-solid fa-exclamation"></i> Key sequence empty</p>
+				{:else if editorState.key.length !== editorState.stones.length}
+					<p class="validation-warn"><i class="fa-solid fa-exclamation"></i> Key/stones mismatch</p>
+				{:else}
+					<p class="validation-ok"><i class="fa-solid fa-check"></i> Key sequence valid</p>
+				{/if}
+			</div>
+		</section>
+
+		<section>
+			<h3>Actions</h3>
+			<div class="action-grid">
+				<button class="action-btn" onclick={() => showTemplatePicker = true} title="New from Template">
+					<i class="fa-solid fa-shapes"></i>
+					<span>Template</span>
+				</button>
+				<button class="action-btn" onclick={() => showSaveTemplateModal = true} title="Save as Template">
+					<i class="fa-solid fa-floppy-disk"></i>
+					<span>Save</span>
+				</button>
+				<button class="action-btn" onclick={handleImport} title="Import">
+					<i class="fa-solid fa-file-import"></i>
+					<span>Import</span>
+				</button>
+				<button class="action-btn" onclick={handleExport} title="Export">
+					<i class="fa-solid fa-file-export"></i>
+					<span>Export</span>
+				</button>
+				<button class="action-btn" onclick={() => showHelp = true} title="Help">
+					<i class="fa-solid fa-circle-question"></i>
+					<span>Help</span>
+				</button>
+				<button class="action-btn danger" onclick={handleClear} title="Clear All">
+					<i class="fa-solid fa-trash"></i>
+					<span>Clear</span>
+				</button>
+			</div>
+		</section>
+	</aside>
+
+	{#if isMobile}
+		<MobileToolbar
+			{editorState}
+			onNewTemplate={() => showTemplatePicker = true}
+			onSaveTemplate={() => showSaveTemplateModal = true}
+			onImport={handleImport}
+			onExport={handleExport}
+			onClear={handleClear}
+			onHelp={() => showHelp = true}
+		/>
+	{/if}
+</div>
 
 <TemplatePicker
 	open={showTemplatePicker}
@@ -288,7 +335,7 @@
 <style>
 	.editor-view {
 		display: grid;
-		grid-template-columns: 200px 1fr;
+		grid-template-columns: 180px 1fr 280px;
 		grid-template-rows: auto minmax(0, 1fr);
 		gap: 1rem;
 		height: 100%;
@@ -305,7 +352,7 @@
 
 	.puzzle-name-input {
 		flex: 1;
-		min-height: 44px;
+		min-height: 52px;
 		padding: 0 1rem;
 		background: var(--bg-surface);
 		border: 1px solid var(--border);
@@ -330,7 +377,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 0.5rem;
-		min-height: 44px;
+		min-height: 52px;
 		padding: 0 1rem;
 		border: none;
 		border-radius: 8px;
@@ -348,7 +395,7 @@
 		background: var(--bg-surface);
 		border: 1px solid var(--border);
 		color: var(--text-muted);
-		width: 44px;
+		width: 52px;
 		padding: 0;
 	}
 
@@ -357,32 +404,67 @@
 		color: var(--accent);
 	}
 
+	.btn-back {
+		background: var(--bg-surface);
+		border: 1px solid var(--border);
+		color: var(--text-secondary);
+		gap: 0.5rem;
+		flex-shrink: 0;
+	}
+
+	.btn-back:hover {
+		background: var(--bg-elevated);
+		color: var(--accent);
+		border-color: var(--accent);
+	}
+
 	.tool-palette-panel {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		gap: 0.75rem;
 		overflow-y: auto;
 		min-height: 0;
 	}
 
-	section {
+	.tool-palette-panel section {
 		background: var(--bg-surface);
 		border: 1px solid var(--border);
 		border-radius: 12px;
-		padding: 1rem;
+		padding: 0.75rem;
 		flex-shrink: 0;
 	}
 
+	.settings-panel {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		overflow-y: auto;
+		min-height: 0;
+		background: var(--bg-surface);
+		border: 1px solid var(--border);
+		border-radius: 12px;
+	}
+
+	.settings-panel section {
+		padding: 0.75rem;
+		border-bottom: 1px solid var(--border);
+		flex-shrink: 0;
+	}
+
+	.settings-panel section:last-child {
+		border-bottom: none;
+	}
+
 	h3 {
-		margin: 0 0 0.75rem;
-		font-size: 0.85rem;
+		margin: 0 0 0.5rem;
+		font-size: 12px;
 		color: var(--text-muted);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 	}
 
 	.hint {
-		font-size: 0.85rem;
+		font-size: 12px;
 		color: var(--text-muted);
 		line-height: 1.6;
 		margin: 0.5rem 0 0;
@@ -402,6 +484,109 @@
 		min-height: 0;
 		overflow: hidden;
 		padding: 1rem;
+	}
+
+	/* Settings panel specific styles */
+	.settings-grid {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.setting-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.setting-row input[type='number'] {
+		width: 60px;
+		min-height: 40px;
+		padding: 0 0.5rem;
+		background: var(--bg-elevated);
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		color: var(--text-primary);
+		font-size: 12px;
+		text-align: center;
+	}
+
+	.setting-label {
+		font-size: 12px;
+		color: var(--text-secondary);
+	}
+
+	.chip-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.validation-status {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.validation-status p {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		margin: 0;
+		font-size: 12px;
+	}
+
+	.validation-ok { color: var(--success); }
+	.validation-warn { color: var(--warning); }
+	.validation-error { color: var(--danger); }
+
+	.validation-status i {
+		width: 14px;
+		text-align: center;
+		font-size: 12px;
+	}
+
+	.action-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 6px;
+	}
+
+	.action-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		min-height: 44px;
+		padding: 0 8px;
+		background: var(--bg-elevated);
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		color: var(--text-secondary);
+		font-size: 12px;
+		cursor: pointer;
+		transition: all 0.15s;
+	}
+
+	.action-btn:hover {
+		background: var(--bg-primary);
+		border-color: var(--accent);
+		color: var(--text-primary);
+	}
+
+	.action-btn.danger {
+		color: var(--danger);
+	}
+
+	.action-btn.danger:hover {
+		background: var(--danger);
+		border-color: var(--danger);
+		color: white;
+	}
+
+	.action-btn i {
+		font-size: 12px;
 	}
 
 	.desktop-only {
@@ -430,7 +615,8 @@
 		align-items: center;
 		gap: 0.75rem;
 		width: 100%;
-		padding: 0.75rem 1rem;
+		min-height: 52px;
+		padding: 0 1rem;
 		background: transparent;
 		border: none;
 		border-radius: 8px;
@@ -458,62 +644,6 @@
 		text-align: center;
 	}
 
-	.sheet-sections {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.sheet-section {
-		background: var(--bg-surface);
-		border: 1px solid var(--border);
-		border-radius: 12px;
-		padding: 1rem;
-	}
-
-	.sheet-section h4 {
-		margin: 0 0 0.75rem;
-		font-size: 0.85rem;
-		color: var(--text-muted);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	.settings {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.setting-row {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	.setting-row input[type='number'] {
-		width: 70px;
-		min-height: 52px;
-		padding: 0 0.5rem;
-		background: var(--bg-elevated);
-		border: 1px solid var(--border);
-		border-radius: 6px;
-		color: var(--text-primary);
-		font-size: 12px;
-		text-align: center;
-	}
-
-	.setting-label {
-		font-size: 12px;
-		color: var(--text-secondary);
-	}
-
-	.chip-row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px;
-	}
-
 	@media (max-width: 767px) {
 		.editor-view {
 			grid-template-columns: 1fr;
@@ -538,21 +668,28 @@
 		}
 
 		.puzzle-name-input {
-			min-height: 44px;
+			min-height: 52px;
 			font-size: 0.9rem;
 		}
 
 		.btn {
-			min-height: 44px;
+			min-height: 52px;
 		}
 
 		.btn-icon {
-			width: 44px;
+			width: 52px;
 		}
 
 		.canvas-area {
 			border-radius: 8px;
 			padding: 0.5rem;
+		}
+	}
+
+	/* Intermediate breakpoint - 2 columns at medium width */
+	@media (min-width: 768px) and (max-width: 1100px) {
+		.editor-view {
+			grid-template-columns: 160px 1fr 240px;
 		}
 	}
 </style>

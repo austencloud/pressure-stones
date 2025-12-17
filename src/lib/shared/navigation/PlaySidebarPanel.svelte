@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { IGameState } from '$lib/features/game/state/game-state.svelte';
 	import HealthBar from '$lib/shared/components/HealthBar.svelte';
-	import KeyDisplay from '$lib/features/game/components/KeyDisplay.svelte';
 	import ChipToggle from '$lib/shared/components/ChipToggle.svelte';
 
 	interface Props {
@@ -17,11 +16,6 @@
 		<section>
 			<h3>Health</h3>
 			<HealthBar current={gameState.health} max={gameState.puzzle.config.startingHealth} />
-		</section>
-
-		<section>
-			<h3>Key Sequence</h3>
-			<KeyDisplay keyEntries={gameState.puzzle.key} currentStep={gameState.currentStep} />
 		</section>
 
 		<section>
@@ -99,7 +93,7 @@
 
 	h3 {
 		margin: 0 0 8px;
-		font-size: 10px;
+		font-size: 12px;
 		color: var(--text-muted);
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
@@ -124,7 +118,7 @@
 	}
 
 	.objective-step i {
-		font-size: 10px;
+		font-size: 12px;
 	}
 
 	.chip-row {
@@ -158,7 +152,7 @@
 
 	.hint {
 		margin: 0 0 6px;
-		font-size: 11px;
+		font-size: 12px;
 		color: var(--text-muted);
 	}
 
@@ -173,7 +167,7 @@
 		border: 1px solid var(--border);
 		border-radius: 4px;
 		font-family: inherit;
-		font-size: 10px;
+		font-size: 12px;
 		color: var(--text-secondary);
 	}
 

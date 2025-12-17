@@ -4,6 +4,8 @@
 	import { createSamplePuzzleSequence } from '$lib/features/game/domain/sample-puzzles';
 	import GameBoard from './GameBoard.svelte';
 	import KeyDisplay from './KeyDisplay.svelte';
+	import KeySequenceBar from './KeySequenceBar.svelte';
+	import StartScreen from './StartScreen.svelte';
 	import HealthBar from '$lib/shared/components/HealthBar.svelte';
 	import {
 		keyToDirection,
@@ -19,16 +21,20 @@
 		type Direction
 	} from '$lib/shared/domain';
 
+	import type { AppMode } from '$lib/shared/state/app-mode.svelte';
+
 	interface Props {
 		onOpenSettings: () => void;
+		onModeChange?: (mode: AppMode) => void;
 	}
 
-	let { onOpenSettings }: Props = $props();
+	let { onOpenSettings, onModeChange }: Props = $props();
 
 	let gameState: IGameState = getGameState();
 	let gameBoardRef: GameBoard | undefined = $state();
 	let previousStatus = $state<string>('idle');
 	let isTransitioning = $state(false);
+	let gameStarted = $state(false);
 
 	// Watch for win state to trigger animation
 	$effect(() => {
@@ -41,11 +47,9 @@
 	});
 
 	onMount(() => {
-		const puzzles = createSamplePuzzleSequence();
-		gameState.initializeSequence(puzzles);
-
 		function handleKeyDown(e: KeyboardEvent) {
 			if (
+				!gameStarted ||
 				gameState.status !== 'playing' ||
 				isTransitioning ||
 				!gameState.puzzle ||
@@ -63,6 +67,16 @@
 		window.addEventListener('keydown', handleKeyDown);
 		return () => window.removeEventListener('keydown', handleKeyDown);
 	});
+
+	function handleStartTutorial() {
+		const puzzles = createSamplePuzzleSequence();
+		gameState.initializeSequence(puzzles);
+		gameStarted = true;
+	}
+
+	function handleCreatePuzzle() {
+		onModeChange?.('editor');
+	}
 
 	async function transitionToNextPuzzle() {
 		if (!gameBoardRef) return;
@@ -129,11 +143,6 @@
 			return;
 		}
 
-		if (positionsEqual(targetPos, gameState.puzzle.playerSpawn)) {
-			handleSpawnReset();
-			return;
-		}
-
 		if (positionsEqual(targetPos, gameState.puzzle.star)) {
 			handleStarInteraction();
 		}
@@ -158,13 +167,6 @@
 			gameState.resetStep();
 			gameState.resetStar();
 		}
-	}
-
-	function handleSpawnReset() {
-		if (!gameState.puzzle) return;
-		gameState.resetStones();
-		gameState.resetStep();
-		gameState.resetStar();
 	}
 
 	function handleStarInteraction() {
@@ -241,6 +243,15 @@
 		isTransitioning = false;
 		const puzzles = createSamplePuzzleSequence();
 		gameState.initializeSequence(puzzles);
+		gameStarted = true;
+	}
+
+	function handleBackToMenu() {
+		if (gameBoardRef) {
+			gameBoardRef.clearOverlays();
+		}
+		isTransitioning = false;
+		gameStarted = false;
 	}
 
 	let progressText = $derived(
@@ -250,69 +261,84 @@
 	);
 </script>
 
-<div class="play-view">
-	<div class="play-header">
-		<h2>{gameState.puzzle?.name ?? 'Pressure Stones'}</h2>
-		{#if progressText}
-			<span class="progress-badge">{progressText}</span>
-		{/if}
+{#if !gameStarted}
+	<div class="play-view">
+		<StartScreen onStartTutorial={handleStartTutorial} onCreatePuzzle={handleCreatePuzzle} />
 	</div>
+{:else}
+	<div class="play-view">
+		<div class="play-header">
+			<button class="back-btn" onclick={handleBackToMenu} title="Back to Menu">
+				<i class="fa-solid fa-arrow-left"></i>
+			</button>
+			<h2>{gameState.puzzle?.name ?? 'Pressure Stones'}</h2>
+			{#if progressText}
+				<span class="progress-badge">{progressText}</span>
+			{/if}
+		</div>
 
-	<!-- Mobile HUD (health and key) -->
-	<div class="mobile-hud">
+		<!-- Key Sequence Bar (centered above game board) -->
 		{#if gameState.puzzle}
-			<div class="hud-health">
-				<HealthBar current={gameState.health} max={gameState.puzzle.config.startingHealth} />
-			</div>
-			<div class="hud-key">
-				<KeyDisplay keyEntries={gameState.puzzle.key} currentStep={gameState.currentStep} compact />
+			<div class="key-bar-container">
+				<KeySequenceBar keyEntries={gameState.puzzle.key} currentStep={gameState.currentStep} />
 			</div>
 		{/if}
-	</div>
 
-	<main class="game-area">
-		{#if gameState.puzzle && gameState.playerPosition}
-			{#if gameState.status === 'won'}
-				<div class="overlay win">
-					<h2>Victory!</h2>
-					<p>You completed all puzzles!</p>
-					<button onclick={handleRestart}>Play Again</button>
-				</div>
-			{:else if gameState.status === 'gameOver'}
-				<div class="overlay game-over">
-					<h2>Game Over</h2>
-					<p>You ran out of health!</p>
-					<button onclick={handleRestart}>Try Again</button>
+		<!-- Mobile HUD (health only, key is now in bar above) -->
+		<div class="mobile-hud">
+			{#if gameState.puzzle}
+				<div class="hud-health">
+					<HealthBar current={gameState.health} max={gameState.puzzle.config.startingHealth} />
 				</div>
 			{/if}
-			<GameBoard
-				bind:this={gameBoardRef}
-				puzzle={gameState.puzzle}
-				playerPosition={gameState.playerPosition}
-				stones={gameState.stones}
-				activatedPadIds={gameState.activatedPadIds}
-				lockedStoneIds={gameState.lockedStoneIds}
-				starCollected={gameState.starCollected}
-				isExitUnlocked={gameState.isExitUnlocked}
-				onTileClick={handleTileClick}
-			/>
-		{:else}
-			<p class="placeholder">Loading puzzle...</p>
-		{/if}
-	</main>
+		</div>
 
-	<!-- Mobile bottom bar -->
-	<div class="mobile-bottom-bar">
-		<button class="mobile-action-btn" onclick={handleRestart}>
-			<i class="fa-solid fa-rotate-right"></i>
-			<span>Restart</span>
-		</button>
-		<button class="mobile-action-btn" onclick={onOpenSettings}>
-			<i class="fa-solid fa-gear"></i>
-			<span>Settings</span>
-		</button>
+		<main class="game-area">
+			{#if gameState.puzzle && gameState.playerPosition}
+				{#if gameState.status === 'won'}
+					<div class="overlay win">
+						<h2>Victory!</h2>
+						<p>You completed all puzzles!</p>
+						<button onclick={handleRestart}>Play Again</button>
+						<button class="secondary-btn" onclick={handleBackToMenu}>Back to Menu</button>
+					</div>
+				{:else if gameState.status === 'gameOver'}
+					<div class="overlay game-over">
+						<h2>Game Over</h2>
+						<p>You ran out of health!</p>
+						<button onclick={handleRestart}>Try Again</button>
+						<button class="secondary-btn" onclick={handleBackToMenu}>Back to Menu</button>
+					</div>
+				{/if}
+				<GameBoard
+					bind:this={gameBoardRef}
+					puzzle={gameState.puzzle}
+					playerPosition={gameState.playerPosition}
+					stones={gameState.stones}
+					activatedPadIds={gameState.activatedPadIds}
+					lockedStoneIds={gameState.lockedStoneIds}
+					starCollected={gameState.starCollected}
+					isExitUnlocked={gameState.isExitUnlocked}
+					onTileClick={handleTileClick}
+				/>
+			{:else}
+				<p class="placeholder">Loading puzzle...</p>
+			{/if}
+		</main>
+
+		<!-- Mobile bottom bar -->
+		<div class="mobile-bottom-bar">
+			<button class="mobile-action-btn" onclick={handleRestart}>
+				<i class="fa-solid fa-rotate-right"></i>
+				<span>Restart</span>
+			</button>
+			<button class="mobile-action-btn" onclick={onOpenSettings}>
+				<i class="fa-solid fa-gear"></i>
+				<span>Settings</span>
+			</button>
+		</div>
 	</div>
-</div>
+{/if}
 
 <style>
 	.play-view {
@@ -338,6 +364,26 @@
 		flex: 1;
 	}
 
+	.back-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 40px;
+		height: 40px;
+		background: var(--bg-surface);
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		color: var(--text-secondary);
+		cursor: pointer;
+		transition: all 0.15s;
+	}
+
+	.back-btn:hover {
+		background: var(--bg-elevated);
+		border-color: var(--accent);
+		color: var(--text-primary);
+	}
+
 	.progress-badge {
 		padding: 0.4rem 0.8rem;
 		background: var(--bg-surface);
@@ -345,6 +391,12 @@
 		border-radius: 20px;
 		font-size: 0.8rem;
 		color: var(--text-secondary);
+	}
+
+	.key-bar-container {
+		display: flex;
+		justify-content: center;
+		flex-shrink: 0;
 	}
 
 	.game-area {
@@ -411,6 +463,19 @@
 		box-shadow: 0 0 30px var(--accent-glow);
 	}
 
+	.overlay .secondary-btn {
+		background: var(--bg-surface);
+		color: var(--text-secondary);
+		box-shadow: none;
+		margin-top: 0.5rem;
+	}
+
+	.overlay .secondary-btn:hover {
+		background: var(--bg-elevated);
+		color: var(--text-primary);
+		box-shadow: none;
+	}
+
 	.placeholder {
 		color: var(--text-muted);
 		font-style: italic;
@@ -429,6 +494,10 @@
 			gap: 0.5rem;
 		}
 
+		.key-bar-container {
+			margin: 0 -0.25rem;
+		}
+
 		.mobile-hud {
 			display: flex;
 			gap: 0.5rem;
@@ -443,10 +512,6 @@
 		.hud-health {
 			flex: 1;
 			min-width: 0;
-		}
-
-		.hud-key {
-			flex-shrink: 0;
 		}
 
 		.game-area {

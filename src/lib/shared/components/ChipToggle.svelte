@@ -54,7 +54,7 @@
 	}
 
 	.chip-toggle i {
-		font-size: 10px;
+		font-size: 12px;
 		width: 14px;
 		text-align: center;
 	}

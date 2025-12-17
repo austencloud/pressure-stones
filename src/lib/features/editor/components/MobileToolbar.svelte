@@ -277,11 +277,11 @@
 		display: flex;
 		align-items: center;
 		gap: 6px;
-		min-height: 40px;
+		min-height: 52px;
 		padding: 0 14px;
 		background: var(--bg-elevated);
 		border: 2px solid transparent;
-		border-radius: 20px;
+		border-radius: 26px;
 		color: var(--text-muted);
 		font-size: 12px;
 		font-weight: 500;
@@ -312,8 +312,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		min-width: 40px;
-		min-height: 40px;
+		min-width: 52px;
+		min-height: 52px;
 		padding: 0;
 		background: var(--bg-elevated);
 		border: 1px solid var(--border);
@@ -361,7 +361,7 @@
 	}
 
 	.tool-label {
-		font-size: 9px;
+		font-size: 12px;
 		font-weight: 500;
 		text-transform: uppercase;
 		letter-spacing: 0.02em;
@@ -432,7 +432,7 @@
 
 	.sheet-section h4 {
 		margin: 0 0 8px;
-		font-size: 10px;
+		font-size: 12px;
 		color: var(--text-muted);
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
@@ -494,7 +494,7 @@
 	.validation-status i {
 		width: 16px;
 		text-align: center;
-		font-size: 10px;
+		font-size: 12px;
 	}
 
 	/* Actions sheet */

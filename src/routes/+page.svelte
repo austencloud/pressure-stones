@@ -9,21 +9,12 @@
 	import DesktopSidebar from '$lib/shared/navigation/DesktopSidebar.svelte';
 	import BottomNavigation from '$lib/shared/navigation/BottomNavigation.svelte';
 	import PlaySidebarPanel from '$lib/shared/navigation/PlaySidebarPanel.svelte';
-	import EditorSidebarPanel from '$lib/shared/navigation/EditorSidebarPanel.svelte';
-	import TemplatePicker from '$lib/features/editor/components/TemplatePicker.svelte';
-	import SaveTemplateModal from '$lib/features/editor/components/SaveTemplateModal.svelte';
-	import EditorHelpOverlay from '$lib/features/editor/components/EditorHelpOverlay.svelte';
 	import { getGameState } from '$lib/features/game/state/game-state.svelte';
-	import { getEditorState } from '$lib/features/editor/state/editor-state.svelte';
 	import { createSamplePuzzleSequence } from '$lib/features/game/domain/sample-puzzles';
-	import type { IRoomTemplate } from '$lib/shared/domain';
 
 	// State
 	let showSettings = $state(false);
 	let showFeedback = $state(false);
-	let showTemplatePicker = $state(false);
-	let showSaveTemplateModal = $state(false);
-	let showHelp = $state(false);
 
 	// Responsive detection
 	let isMobile = $state(false);
@@ -37,7 +28,6 @@
 
 	// Get state instances
 	let gameState = getGameState();
-	let editorState = getEditorState();
 
 	function setMode(mode: AppMode) {
 		appModeState.setMode(mode);
@@ -56,52 +46,6 @@
 		const puzzles = createSamplePuzzleSequence();
 		gameState.initializeSequence(puzzles);
 	}
-
-	// Editor actions
-	function handleExport() {
-		try {
-			const puzzle = editorState.exportPuzzle();
-			const json = JSON.stringify(puzzle, null, 2);
-			const blob = new Blob([json], { type: 'application/json' });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = `${editorState.puzzleName.replace(/\s+/g, '-').toLowerCase()}.json`;
-			a.click();
-			URL.revokeObjectURL(url);
-		} catch (error) {
-			alert(error instanceof Error ? error.message : 'Export failed');
-		}
-	}
-
-	function handleImport() {
-		const input = document.createElement('input');
-		input.type = 'file';
-		input.accept = '.json';
-		input.onchange = async (e) => {
-			const file = (e.target as HTMLInputElement).files?.[0];
-			if (!file) return;
-
-			try {
-				const text = await file.text();
-				const puzzle = JSON.parse(text);
-				editorState.importPuzzle(puzzle);
-			} catch {
-				alert('Failed to import puzzle. Check the file format.');
-			}
-		};
-		input.click();
-	}
-
-	function handleClear() {
-		if (confirm('Clear all? This cannot be undone.')) {
-			editorState.clear();
-		}
-	}
-
-	function handleTemplateSelect(template: IRoomTemplate) {
-		editorState.applyTemplate(template);
-	}
 </script>
 
 <svelte:head>
@@ -112,39 +56,29 @@
 </svelte:head>
 
 <div class="app-container">
-	<!-- Desktop Sidebar (hidden on mobile) -->
-	<div class="desktop-only">
-		<DesktopSidebar
-			currentMode={appModeState.mode}
-			onModeChange={setMode}
-		>
-			{#snippet contextPanel()}
-				{#if appModeState.mode === 'play'}
+	<!-- Desktop Sidebar (hidden on mobile, and hidden in editor mode) -->
+	{#if appModeState.mode === 'play'}
+		<div class="desktop-only">
+			<DesktopSidebar
+				currentMode={appModeState.mode}
+				onModeChange={setMode}
+			>
+				{#snippet contextPanel()}
 					<PlaySidebarPanel
 						{gameState}
 						onRestart={handleRestart}
 					/>
-				{:else}
-					<EditorSidebarPanel
-						{editorState}
-						onNewTemplate={() => showTemplatePicker = true}
-						onSaveTemplate={() => showSaveTemplateModal = true}
-						onImport={handleImport}
-						onExport={handleExport}
-						onClear={handleClear}
-						onHelp={() => showHelp = true}
-					/>
-				{/if}
-			{/snippet}
-		</DesktopSidebar>
-	</div>
+				{/snippet}
+			</DesktopSidebar>
+		</div>
+	{/if}
 
 	<!-- Main Content Area -->
 	<main class="app-main">
 		{#if appModeState.mode === 'play'}
-			<PlayView onOpenSettings={openSettings} />
+			<PlayView onOpenSettings={openSettings} onModeChange={setMode} />
 		{:else}
-			<EditorView onOpenSettings={openSettings} />
+			<EditorView onOpenSettings={openSettings} onModeChange={setMode} />
 		{/if}
 	</main>
 
@@ -189,21 +123,6 @@
 	</BottomSheet>
 {/if}
 
-<!-- Editor Modals -->
-<TemplatePicker
-	open={showTemplatePicker}
-	onSelect={handleTemplateSelect}
-	onClose={() => (showTemplatePicker = false)}
-/>
-
-<SaveTemplateModal
-	open={showSaveTemplateModal}
-	{editorState}
-	onClose={() => (showSaveTemplateModal = false)}
-	onSaved={() => {}}
-/>
-
-<EditorHelpOverlay open={showHelp} onClose={() => (showHelp = false)} />
 
 <style>
 	.app-container {

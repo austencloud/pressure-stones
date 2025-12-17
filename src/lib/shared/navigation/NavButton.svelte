@@ -48,7 +48,7 @@
 	}
 
 	.label {
-		font-size: 10px;
+		font-size: 12px;
 		font-weight: 500;
 		white-space: nowrap;
 	}
