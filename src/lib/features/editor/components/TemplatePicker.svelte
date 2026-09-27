@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { IRoomTemplate } from '$lib/shared/domain';
 	import { BUILT_IN_TEMPLATES } from '../data/built-in-templates';
-	import { getUserTemplates, deleteUserTemplate } from '../services/template-service';
+	import { getUserTemplates } from '../services/template-service';
 	import TemplateCard from './TemplateCard.svelte';
 
 	interface Props {
@@ -38,17 +38,6 @@
 	function handleSelect(template: IRoomTemplate) {
 		onSelect(template);
 		onClose();
-	}
-
-	async function handleDelete(template: IRoomTemplate) {
-		if (!confirm(`Delete "${template.name}"?`)) return;
-
-		try {
-			await deleteUserTemplate(template.id);
-			userTemplates = userTemplates.filter((t) => t.id !== template.id);
-		} catch (e) {
-			console.error('Failed to delete template:', e);
-		}
 	}
 
 	function handleBackdropClick(e: MouseEvent) {
@@ -89,7 +78,7 @@
 					{:else}
 						<div class="template-grid">
 							{#each userTemplates as template (template.id)}
-								<TemplateCard {template} onSelect={handleSelect} onDelete={handleDelete} />
+								<TemplateCard {template} onSelect={handleSelect} />
 							{/each}
 						</div>
 					{/if}

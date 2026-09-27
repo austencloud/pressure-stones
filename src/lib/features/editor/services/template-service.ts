@@ -2,8 +2,6 @@ import {
 	collection,
 	getDocs,
 	addDoc,
-	deleteDoc,
-	doc,
 	query,
 	orderBy,
 	Timestamp
@@ -74,7 +72,6 @@ export async function saveUserTemplate(template: {
 
 	const firestoreData: FirestoreTemplate = {
 		name: template.name,
-		description: template.description,
 		roomTiles: template.roomTiles,
 		defaultBorderType: template.defaultBorderType,
 		walls: template.walls,
@@ -83,6 +80,10 @@ export async function saveUserTemplate(template: {
 		height: template.height,
 		createdAt: Timestamp.now()
 	};
+	// Firestore rejects undefined field values, so a template with no description leaves the field out.
+	if (template.description) {
+		firestoreData.description = template.description;
+	}
 
 	const docRef = await addDoc(templatesRef, firestoreData);
 
@@ -91,10 +92,4 @@ export async function saveUserTemplate(template: {
 		...template,
 		isBuiltIn: false
 	});
-}
-
-export async function deleteUserTemplate(id: string): Promise<void> {
-	const db = getFirestoreDb();
-	const templateRef = doc(db, TEMPLATES_COLLECTION, id);
-	await deleteDoc(templateRef);
 }
