@@ -1,0 +1,63 @@
+rules_version = '2';
+
+// Pressure Stones has no sign-in, so every request from the app is anonymous.
+// Only the requests the live app makes are allowed; everything else is denied.
+// Reading or deleting feedback goes through the admin scripts in scripts/,
+// which use firebase-admin and are not bound by these rules.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Feedback form: visitors can submit feedback but never read, edit or delete it.
+    match /feedback/{feedbackId} {
+      allow create: if isValidFeedback(request.resource.data);
+    }
+
+    // Room templates: a shared library visitors can browse and add to,
+    // but not edit or delete.
+    match /templates/{templateId} {
+      allow read: if true;
+      allow create: if isValidTemplate(request.resource.data);
+    }
+
+    function isText(value, maxLength) {
+      return value is string && value.size() > 0 && value.size() <= maxLength;
+    }
+
+    function isTileList(value) {
+      return value is list && value.size() <= 10000;
+    }
+
+    function isGridSize(value) {
+      return value is int && value >= 0 && value <= 100;
+    }
+
+    // Matches submitFeedback() in src/lib/features/feedback/services/feedback-service.ts.
+    function isValidFeedback(data) {
+      let fields = ['type', 'title', 'description', 'submittedBy', 'submittedAt', 'status'];
+      return data.keys().hasOnly(fields)
+        && data.keys().hasAll(fields)
+        && data.type in ['idea', 'bug', 'question']
+        && isText(data.title, 300)
+        && isText(data.description, 10000)
+        && isText(data.submittedBy, 100)
+        && data.submittedAt is timestamp
+        && data.status == 'new';
+    }
+
+    // Matches saveUserTemplate() in src/lib/features/editor/services/template-service.ts.
+    function isValidTemplate(data) {
+      let required = ['name', 'roomTiles', 'defaultBorderType', 'walls', 'lava', 'width', 'height', 'createdAt'];
+      return data.keys().hasOnly(required.concat(['description']))
+        && data.keys().hasAll(required)
+        && isText(data.name, 100)
+        && (!('description' in data) || isText(data.description, 500))
+        && isTileList(data.roomTiles)
+        && isTileList(data.walls)
+        && isTileList(data.lava)
+        && data.defaultBorderType in ['wall', 'lava', 'none']
+        && isGridSize(data.width)
+        && isGridSize(data.height)
+        && data.createdAt is timestamp;
+    }
+  }
+}
