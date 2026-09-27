@@ -1,13 +1,5 @@
-// Quick script to read feedback from Firestore
-import { initializeApp, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-
-// Initialize with default credentials (uses gcloud auth)
-initializeApp({
-  projectId: 'pressurestones-2c455'
-});
-
-const db = getFirestore();
+// Prints all feedback, newest first: node scripts/read-feedback.js
+import { db } from './admin.js';
 
 async function readFeedback() {
   try {
@@ -33,6 +25,7 @@ async function readFeedback() {
     });
   } catch (error) {
     console.error('Error reading feedback:', error.message);
+    process.exitCode = 1;
   }
 }
 
